@@ -1,0 +1,19 @@
+##Example usage:
+
+#To find all files with a python extension in the current directory
+./pyFind.py -p . -r ".*py$"
+
+#--within a sub-directory max-depth of 2
+./pyFind.py -p . -r "*.py$" -m 2
+
+#To get all occurances of 'include' from standard input
+cat *.c | ./pyFind.py -r "include"
+
+#To copy all header files( *.h ) in directory '/usr/include' to directory '/home/headerCollection'
+./pyFind.py -p /usr/include -r ".*h$" -a "cp {} /home/headerCollection"
+
+#Get yourself all usages of 'git' in your history
+history | ./pyFind.py -r "git"
+
+#Clean up all the swap files within a depth of 2 sub-directories of your current directory
+./pyFind.py -p . -r ".*swp$" -a "rm {}"
