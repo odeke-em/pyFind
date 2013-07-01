@@ -6,8 +6,9 @@
 #--within a sub-directory max-depth of 2
 ./pyFind.py -p . -r "*.py$" -m 2
 
-#To get all occurances of 'include' as received from standard input
-cat * | ./pyFind.py -r "include"
+#To get all occurances of 'include' library files as received from standard input, 
+#printing only the matches as specified by the input regular expression
+cat * | ./pyFind.py -r "include\s<.*>" -o
 
 #To copy all header files( *.h ) in directory '/usr/include' to directory '/home/headerCollection'
 ./pyFind.py -p /usr/include -r ".*h$" -a "cp {} /home/headerCollection"
