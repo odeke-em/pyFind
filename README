@@ -18,3 +18,7 @@ history | ./pyFind.py -r "git"
 
 #Clean up all the swap files within a depth of 2 sub-directories of your current directory
 ./pyFind.py -p . -r ".*swp$" -a "rm {}"
+
+#To find all .py files newer than 'pyFind.py' within a sub-directory depth of 9,
+#and copy them to directory '../newest_pys'
+./pyFind.py -p .. -m 9 -r "*py$" -a "cp {} ../newest_pys" -n "pyFind.py"
