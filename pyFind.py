@@ -52,12 +52,12 @@ DEFAULT_SLEEP_TIMEOUT = 1
 ###############################END_OF_CONSTANTS################################
 
 #Sub an asterik "*" that was included without a "." preceding it
-#A presence of the above condition could potentially poison the regex
+#The presence of the above condition could potentially poison the regex
 #Matcher to keep a greedy search going on and consuming endless memory
 def clearRegexRecur(inRegex):
   #Input: A potential regular expression as a string
   #Convert an orphaned asterik "*" ie without a preceeding dot "." to ".*"
-  #Convert
+  #Returns: the sanitized regex
   try:
     regex = re.sub('^\.+$|^\*+$','^.*$',inRegex)
     regex = re.sub('(^\*)|(^\.+[\.]+)|(\s*\*+)','.*', regex)
@@ -68,14 +68,17 @@ def clearRegexRecur(inRegex):
   else:
     return regCompile
 
-#Permission and path associated functions, each of these functions
-#return True iff the user has the specific permissions
+
+#Returns True if a non-empty string is queried, and the string is a valid path
 existantPath   = lambda aPath : aPath and os.path.exists(aPath)
-hasReadPerm    = lambda aPath : aPath and os.access(aPath, os.R_OK)
-hasWritePerm   = lambda aPath : aPath and os.access(aPath, os.W_OK)
-hasXecutePerm  = lambda aPath : aPath and os.access(aPath, os.X_OK)
-hasRWXPerms    = lambda aPath : hasReadPerm(aPath)and hasWritePerms(aPath)\
-                 and hasXecutePerm(aPath)
+
+#Permission and path associated functions, each of these functions
+#returns True if the user has the specific permissions and if the path exists
+hasReadPerm    = lambda aPath : existantPath(aPath) and os.access(aPath, os.R_OK)
+hasWritePerm   = lambda aPath : existantPath(aPath) and os.access(aPath, os.W_OK)
+hasXecutePerm  = lambda aPath : existantPath(aPath) and os.access(aPath, os.X_OK)
+hasRWXPerms    = lambda aPath : hasReadPerm(aPath)  and hasWritePerms(aPath)\
+                                and hasXecutePerm(aPath)
 
 def handlePrint(queriedContent):
   "Handles printing of data with the assumption that data types 'str', 'int',\
