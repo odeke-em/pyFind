@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 '''
-*****************************************************************************
+********************************************************************************
  Author: Emmanuel Odeke <odeke@ualberta.ca>
  pyFind v1.1 
 
@@ -13,8 +13,7 @@
  Acts as a filter in case no input arguments are passed in, taking input from
  standard input e.g
      ls | ./pyFind.py -r "*.c$" ##To search for all files with a .c extension
-
-*****************************************************************************
+********************************************************************************
 '''
 import os, re,sys
 from stat import S_ISDIR
@@ -51,6 +50,11 @@ HIGHLIGHT = '\033['
 DEFAULT_SLEEP_TIMEOUT = 1
 ###############################END_OF_CONSTANTS################################
 
+#Writes a message to a stream and flushes the stream. Default stream is standard
+#error
+streamPrintFlush = lambda msg,stream=sys.stderr:\
+                     msg and stream.write(msg) and stream.flush()
+
 #Sub an asterik "*" that was included without a "." preceding it
 #The presence of the above condition could potentially poison the regex
 #Matcher to keep a greedy search going on and consuming endless memory
@@ -80,6 +84,7 @@ hasXecutePerm  = lambda aPath : existantPath(aPath) and os.access(aPath, os.X_OK
 hasRWXPerms    = lambda aPath : hasReadPerm(aPath)  and hasWritePerms(aPath)\
                                 and hasXecutePerm(aPath)
 
+
 def handlePrint(queriedContent):
   "Handles printing of data with the assumption that data types 'str', 'int',\
    'tuple' can be printed on a single line without a lot of distortion and \
@@ -98,10 +103,11 @@ def handlePrint(queriedContent):
 
   if singleLinePrintable:
     try:
-      sys.stdout.write("%s\n"%(queriedContent))
+      streamPrintFlush("%s\n"%(queriedContent), stream=sys.stdout)
     except UnicodeEncodeError as e:
-      sys.stderr.write("UnicodeEncodeError encode while trying to print\n")
-      sys.stderr.write(e.__str__())
+      streamPrintFlush(
+        "UnicodeEncodeError encode while trying to print\n%s\n"%(e.__str__())
+      )
       return
 
   elif (isinstance(queriedContent , list)):
@@ -113,8 +119,7 @@ def handlePrint(queriedContent):
       handlePrint(queriedContent[key])
 
   else: #The queriedContent should have hooks: __str__() and __repr__() defined
-    sys.stderr.write(queriedContent)
-    sys.stderr.write("\n")
+    streamPrintFlush(queriedContent)
 
 def cli_parser():
     "The commandline parser.\
@@ -137,8 +142,7 @@ def cli_parser():
 
     parser.add_option('-v','--verbose',dest='verbosity',default=True,
     help="Set whether to display output. Expected sanitizedChildPaths: "+\
-      "True or False",
-    action='store_false')
+      "True or False",action='store_false')
     
     parser.add_option('-i','--ignoreCase',dest='ignoreCase',default=True,
     help="Turn-off case sensitive matches",action="store_false")
@@ -195,18 +199,18 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
      Returns: None"
     #Catch invalid regexCompiles
     if (not hasattr(regexCompile,'match')):
-      sys.stderr.write("Invalid regexCompile: %s\n"%(regexCompile))
+      streamPrintFlush("Invalid regexCompile: %s\n"%(regexCompile))
       return
 
     if (recursionDepth < 0):
       return
 
     if (not existantPath(thePath)):
-      sys.stderr.write("%s doesn't exist\n"%(thePath))
+      streamPrintFlush("%s doesn't exist\n"%(thePath))
       return
 
     if (not hasReadPerm(thePath)):
-      sys.stderr.write("No read access to path %s\n"%(thePath))
+      streamPrintFlush("No read access to path %s\n"%(thePath))
       return
 
     statDict = os.stat(thePath)
@@ -216,8 +220,9 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
     if (baseTime and (baseTime >= 0) and (statDict.st_ctime < baseTime)):
       return
 
-    patternMatchedTrue = matchPatterns(regexCompile,thePath,
-                            verbosity,onlyMatches,colorKey)
+    patternMatchedTrue = \
+      matchPatterns(regexCompile,thePath, verbosity,onlyMatches,colorKey)
+                           
     
     if (patternMatchedTrue):
       if (action):#Expecting a generic terminal based action eg cat, cp
@@ -227,9 +232,9 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
       for child in os.listdir(thePath):
         fullChildPath = os.path.join(thePath,child)
         treeTraverse(
-            fullChildPath,recursionDepth,regexCompile,
-            action,verbosity,onlyMatches,baseTime,colorKey
-       )
+          fullChildPath,recursionDepth,regexCompile,
+          action,verbosity,onlyMatches,baseTime,colorKey
+        )
 
 def resolveBaseTime(path):
   #Input: A path -- directory/pipe or regular file
@@ -260,13 +265,14 @@ def main():
 
     try:
       maxdepth  = int(maxdepth)
-    except ValueError as e:
-      sys.stderr.write("MaxDepth should be an integer.\nExiting...\n")
+    except ValueError:
+      streamPrintFlush("MaxDepth should be an integer.\nExiting...\n")
       sys.exit(-1)
 
     if (maxdepth < 0):
-       handlePrint("Illegal maxdepth: range should be >= 0.\nExiting..")
-       sys.exit(-2)
+      handlePrint("Illegal maxdepth: range should be >= 0.\nExiting..")
+      sys.exit(-2)
+
     regexArgs = re.UNICODE #Cases to be toggled in the match eg:
                            #Unicode character handling,case sensitivity etc
     if (ignoreCase):
@@ -316,7 +322,7 @@ def filterStdin(regexCompile,action,verbosity,onlyMatches,colorKey=RED):
     try:
       lineIn = sys.stdin.readline()
       if (lineIn == ""):#EOF equivalent here, time to end reading
-        stdinReading = False
+        break
     except KeyboardInterrupt as e:
       handlePrint("Ctrl-C applied.\nExiting now...")
       stdinReading = False
@@ -325,11 +331,11 @@ def filterStdin(regexCompile,action,verbosity,onlyMatches,colorKey=RED):
       stdinReading = False
     else:
       lineIn = lineIn.strip('\n')
-      patternMatchedTrue = matchPatterns(regexCompile,lineIn,
-                            verbosity,onlyMatches,colorKey)
+      patternMatchedTrue = \
+          matchPatterns(regexCompile,lineIn, verbosity,onlyMatches,colorKey)
 
       if (patternMatchedTrue and action):
         handleFunctionExecution(action,subject=lineIn)
       
 if __name__ == '__main__':
-    main()
+  main()
