@@ -21,7 +21,7 @@ from time import sleep
 from stat import S_ISDIR
 from subprocess import Popen 
 
-from parser import cli_parser #Local module
+from parserCLI import cli_parser #Local module
 
 ###############################START_OF_CONSTANTS###############################
 YELLOW  = "YELLOW"
