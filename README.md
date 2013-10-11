@@ -52,3 +52,15 @@ Example usage:
   To turn off pattern-coloring:
 
     ./pyFind.py -c -p .. -r "*.h"
+
+  If no command line arguments are passed in, it will assume the order
+
+    <regex/pattern> <path>
+
+  For the traditional grep users:
+
+    ./pyFind.py foo <==> grep foo <==> ./pyFind.py -r foo
+
+    ls | ./pyFind.py  foo <==> ls | grep foo
+
+    ./pyFind.py foo . <==> grep foo . <==> ./pyFind.py -r foo -p .

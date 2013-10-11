@@ -39,9 +39,9 @@ WINDOWS_NT     = "nt"
 #Codes for colors on posix-based terminals
 POSIX_COLORS  = { 
      WHITE  : 0,
-     RED    : 31,
-     GREEN  : 32,
-     YELLOW : 33
+     RED    : 91,
+     GREEN  : 92,
+     YELLOW : 93
 }
 
 HIGHLIGHT = '\033['
@@ -198,6 +198,7 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
       if (action):#Expecting a generic terminal based action eg cat, cp
         handleFunctionExecution(action, subject=thePath)
 
+    
     if (S_ISDIR(statDict.st_mode)):
       for child in os.listdir(thePath):
         fullChildPath = os.path.join(thePath,child)
@@ -219,7 +220,8 @@ def resolveBaseTime(path):
     return statInfo.st_ctime
 
 def main():
-    if (len(sys.argv)== 1):
+    argc = len(sys.argv)
+    if (argc <= 1):
        sys.argv.append('-h')
 
     parser       = cli_parser()
@@ -240,18 +242,30 @@ def main():
       sys.exit(-1)
 
     maxDepth = int(maxDepth)
-
+    
     regexArgs = re.UNICODE #Cases to be toggled in the match eg:
                            #Unicode character handling,case sensitivity etc
     if (ignoreCase):
        regexArgs |= re.IGNORECASE
     
+
+    #Case for when only the regex and path have been entered eg: 
+    # ./pyFind.py books .
+    if (argc == 3):
+      targetPath = sys.argv[2]
+      argc -= 1 #Reduction in-order to catch argument 2 in the argument vector
+  
+    #Case for when only the regex has been entered eg: 
+    # ./pyFind.py books
+    if (argc == 2):
+      regex = sys.argv[1]
+
     regCompile = clearRegexRecur(regex)
 
     if (targetPath):
        baseTime = resolveBaseTime(newerFile)
        treeTraverse(
-	 targetPath, maxDepth, regCompile, action,
+         targetPath, maxDepth, regCompile, action,
          verbosity, onlyMatches, baseTime, colorOn
        )
     else:
@@ -296,7 +310,8 @@ def filterStdin(
       if (lineIn == ""):#EOF equivalent here, time to end reading
         break
     except KeyboardInterrupt as e:
-      handlePrint("Ctrl-C applied.\nExiting now...")
+      if False: #This clause will be taken out soon
+        handlePrint("Ctrl-C applied.\nExiting now...")
       stdinReading = False
     except Exception as e:
       handlePrint(e.__str__())
@@ -304,7 +319,7 @@ def filterStdin(
     else:
       lineIn = lineIn.strip('\n')
       patternMatchedTrue = matchPatterns(
-	regexCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey
+        regexCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey
       )
 
       if (patternMatchedTrue and action):
