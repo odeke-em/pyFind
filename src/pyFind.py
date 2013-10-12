@@ -22,6 +22,7 @@ from stat import S_ISDIR
 from subprocess import Popen 
 
 from parserCLI import cli_parser #Local module
+import pathFuncs
 
 ###############################START_OF_CONSTANTS###############################
 YELLOW  = "YELLOW"
@@ -74,18 +75,6 @@ def clearRegexRecur(inRegex):
     return None
   else:
     return regCompile
-
-
-#Returns True if a non-empty string is queried, and the string is a valid path
-existantPath   = lambda aPath : aPath and os.path.exists(aPath)
-
-#Permission and path associated functions, each of these functions
-#returns True if the user has the specific permissions and if the path exists
-hasReadPerm    = lambda aPath : existantPath(aPath) and os.access(aPath, os.R_OK)
-hasWritePerm   = lambda aPath : existantPath(aPath) and os.access(aPath, os.W_OK)
-hasXecutePerm  = lambda aPath : existantPath(aPath) and os.access(aPath, os.X_OK)
-hasRWXPerms    = lambda aPath : hasReadPerm(aPath)  and hasWritePerms(aPath)\
-                                and hasXecutePerm(aPath)
 
 
 def handlePrint(queriedContent):
@@ -176,22 +165,24 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
     if (recursionDepth < 0):
       return
 
-    if (not existantPath(thePath)):
+    if (not pathFuncs.existantPath(thePath)):
       streamPrintFlush("%s doesn't exist\n"%(thePath))
       return
 
-    if (not hasReadPerm(thePath)):
+    if (not pathFuncs.hasReadPerm(thePath)):
       streamPrintFlush("No read access to path %s\n"%(thePath))
       return
 
-    statDict = os.stat(thePath)
+    statDict = pathFuncs.getStatDict(thePath)
     recursionDepth -= 1
     #If the path is newer, it's creation time should be greater than baseTime
     if (baseTime and (baseTime >= 0) and (statDict.st_ctime < baseTime)):
       return
 
     patternMatchedTrue = \
-      matchPatterns(regexCompile,thePath, verbosity,onlyMatches, colorOn, colorKey)
+      matchPatterns(
+        regexCompile,thePath, verbosity,onlyMatches, colorOn, colorKey
+      )
                            
     
     if (patternMatchedTrue):
@@ -200,8 +191,9 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
 
     
     if (S_ISDIR(statDict.st_mode)):
-      for child in os.listdir(thePath):
-        fullChildPath = os.path.join(thePath,child)
+
+      for child in pathFuncs.dirListing(thePath):
+        fullChildPath = pathFuncs.afixPath(thePath, child)
         treeTraverse(
           fullChildPath,recursionDepth,regexCompile,
           action,verbosity,onlyMatches,baseTime,colorOn, colorKey
@@ -210,10 +202,10 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
 def resolveBaseTime(path):
   #Input: A path -- directory/pipe or regular file
   #Return the creation time for the path if it is valid, else return -1
-  if not existantPath(path):
+  if not pathFuncs.existantPath(path):
     return -1
   try:
-    statInfo = os.stat(path)
+    statInfo = pathFuncs.getStatDict(path)
   except:
     return -1
   else:

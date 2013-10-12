@@ -9,6 +9,21 @@ from hashlib import md5
 afixPath = lambda root, path : os.path.join(root, path)
 getDirContent = lambda path : os.walk(path)
 
+#Returns True if a non-empty string is queried, and the string is a valid path
+existantPath  = lambda aPath : aPath and os.path.exists(aPath)
+
+#Permission and path associated functions, each of these functions
+#returns True if the user has the specific permissions and if the path exists
+hasReadPerm   = lambda aPath : existantPath(aPath) and os.access(aPath, os.R_OK)
+hasWritePerm  = lambda aPath : existantPath(aPath) and os.access(aPath, os.W_OK)
+hasXecutePerm = lambda aPath : existantPath(aPath) and os.access(aPath, os.X_OK)
+hasRWXPerms   = lambda aPath : hasReadPerm(aPath) and hasWritePerms(aPath)\
+                                and hasXecutePerm(aPath)
+
+def getStatDict(path):
+  if path and os.path.exists(path):
+    return os.stat(path)
+
 def dirListing(targetPath):
   return os.listdir(targetPath)
 
