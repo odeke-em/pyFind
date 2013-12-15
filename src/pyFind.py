@@ -243,14 +243,14 @@ def main():
 
     #Case for when only the regex and path have been entered eg: 
     # ./pyFind.py books .
-    if (argc == 3):
-      targetPath = sys.argv[2]
-      argc -= 1 #Reduction in-order to catch argument 2 in the argument vector
+    # if (argc == 3):
+    #   targetPath = sys.argv[2]
+    #   argc -= 1 #Reduction in-order to catch argument 2 in the argument vector
   
     #Case for when only the regex has been entered eg: 
     # ./pyFind.py books
-    if (argc == 2):
-      regex = sys.argv[1]
+    # if (argc == 2):
+    #   regex = sys.argv[1]
 
     regCompile = clearRegexRecur(regex)
 
