@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 '''
 ********************************************************************************
  Author: Emmanuel Odeke <odeke@ualberta.ca>
@@ -67,7 +67,7 @@ def clearRegexRecur(inRegex):
   #Convert an orphaned asterik "*" ie without a preceeding dot "." to ".*"
   #Returns: the sanitized regex
   try:
-    regex = re.sub('^\.+$|^\*+$','^.*$',inRegex)
+    regex = re.sub('^\.+$|^\*+$|^$','^.*$',inRegex)
     regex = re.sub('(^\*)|(^\.+[\.]+)|(\s*\*+)','.*', regex)
     
     regCompile = re.compile(regex)
@@ -96,9 +96,9 @@ def handlePrint(queriedContent):
   if singleLinePrintable:
     try:
       streamPrintFlush("%s\n"%(queriedContent), stream=sys.stdout)
-    except UnicodeEncodeError as e:
+    except UnicodeEncodeError:
       streamPrintFlush(
-        "UnicodeEncodeError encode while trying to print\n%s\n"%(e.__str__())
+        "UnicodeEncodeError encode while printing\n"
       )
       return
 
@@ -141,6 +141,8 @@ def matchPatterns(
 
     if (verbosity):
       if (colorOn and SUPPORTS_TERMINAL_COLORING):
+        # Take out non empty sequences
+        regMatches = filter(lambda value : value, regMatches)
         for item in regMatches:
           text = text.replace(item,colorPatterns(colorKey,item))
 
@@ -301,12 +303,12 @@ def filterStdin(
       lineIn = sys.stdin.readline()
       if (lineIn == ""):#EOF equivalent here, time to end reading
         break
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
       if False: #This clause will be taken out soon
         handlePrint("Ctrl-C applied.\nExiting now...")
       stdinReading = False
-    except Exception as e:
-      handlePrint(e.__str__())
+    except Exception:
+      handlePrint('Unhandled exception')
       stdinReading = False
     else:
       lineIn = lineIn.strip('\n')
