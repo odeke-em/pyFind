@@ -117,8 +117,8 @@ colorPatterns =\
        hlight=HIGHLIGHT,color=POSIX_COLORS.get(colorKey,GREEN), text=text,white=POSIX_COLORS[WHITE]
     )
 
-def matchPatterns(regexCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey):
-  regMatches = regexCompile.findall(text)
+def matchPatterns(regCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey):
+  regMatches = regCompile.findall(text)
   PATTERNS_MATCHED=False
   if (regMatches):
     PATTERNS_MATCHED=True
@@ -134,45 +134,45 @@ def matchPatterns(regexCompile, text, verbosity, onlyPatternsPrinted, colorOn, c
 
       return PATTERNS_MATCHED 
 
-    if (verbosity):
-      if (colorOn and SUPPORTS_TERMINAL_COLORING):
+    if verbosity:
+      if colorOn and SUPPORTS_TERMINAL_COLORING:
         # Take out non empty sequences
-        regMatches = filter(lambda value : value, regMatches)
+        regMatches = set(filter(lambda value: value, regMatches))
         for item in regMatches:
-          text = text.replace(item,colorPatterns(colorKey,item))
+          text = text.replace(item, colorPatterns(colorKey, item))
 
       handlePrint(text)
 
   return PATTERNS_MATCHED
 
-def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
+def treeTraverse(thePath, rDepth=1, regCompile=None,
      action=None,verbosity=True,onlyMatches=False,baseTime=None,colorOn=True,colorKey=RED):
     "Traverse a given path. A negative recursion depth terminates the tree traversal dive.\
      Input: Path, match parameters and action to be performed 'baseTime' is an unsigned\
      number(float/int) parameter for which matches  will have to be newer.\
      Output: Results from pattern matching and generic action application\
      Returns: None"
-    #Catch invalid regexCompiles
+    #Catch invalid regCompiles
 
-    if not (hasattr(recursionDepth, '__divmod__') and recursionDepth >= 1):
+    if not (hasattr(rDepth, '__divmod__') and rDepth >= 1):
       return
 
-    elif not hasattr(regexCompile,'match'):
-      streamPrintFlush("Invalid regexCompile: %s\n"%(regexCompile))
+    elif not hasattr(regCompile,'match'):
+      streamPrintFlush("Invalid regCompile: %s\n"%(regCompile))
 
-    elif (not pathFuncs.existantPath(thePath)):
+    elif not pathFuncs.existantPath(thePath):
       streamPrintFlush("%s doesn't exist\n"%(thePath))
 
     elif (not pathFuncs.hasReadPerm(thePath)):
       streamPrintFlush("No read access to path %s\n"%(thePath))
     else:
-      recursionDepth -= 1
+      rDepth -= 1
       #If the path is newer, it's creation time should be greater than baseTime
       if baseTime and (baseTime >= 0) and os.path.getctime(thePath) < baseTime:
         return
       else:
         patternMatchedTrue = matchPatterns(
-            regexCompile,thePath, verbosity,onlyMatches, colorOn, colorKey
+            regCompile,thePath, verbosity,onlyMatches, colorOn, colorKey
         )
     
         if (patternMatchedTrue):
@@ -183,7 +183,7 @@ def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
           for child in pathFuncs.dirListing(thePath):
             fullChildPath = pathFuncs.afixPath(thePath, child)
             treeTraverse(
-              fullChildPath,recursionDepth,regexCompile,
+              fullChildPath,rDepth,regCompile,
               action,verbosity,onlyMatches,baseTime,colorOn, colorKey
             )
 
@@ -210,26 +210,14 @@ def main():
       sys.exit(-1)
 
     maxDepth = int(maxDepth)
-    
-    regexArgs = re.UNICODE #Cases to be toggled in the match eg:
-                           #Unicode character handling,case sensitivity etc
-    if (ignoreCase):
+    regexArgs = re.UNICODE # Cases to be toggled in the match eg:
+                           # Unicode character handling,case sensitivity etc
+    if ignoreCase:
        regexArgs |= re.IGNORECASE
-
-    #Case for when only the regex and path have been entered eg: 
-    # ./pyFind.py books .
-    # if (argc == 3):
-    #   targetPath = sys.argv[2]
-    #   argc -= 1 #Reduction in-order to catch argument 2 in the argument vector
-  
-    # Case for when only the regex has been entered eg: 
-    # ./pyFind.py books
-    # if (argc == 2):
-    #   regex = sys.argv[1]
 
     regCompile = clearRegexRecur(regex)
 
-    if (targetPath):
+    if targetPath:
        baseTime = -1
        if newerFile and os.path.exists(newerFile):
          baseTime = os.path.getctime(newerFile)
@@ -239,7 +227,7 @@ def main():
          verbosity, onlyMatches, baseTime, colorOn
        )
     else:
-       #Time for program to act as a filter
+       # Time for program to act as a filter
        filterStdin(regCompile, action, verbosity, onlyMatches, colorOn)
 
 def handleFunctionExecution(action, subject):
@@ -248,7 +236,7 @@ def handleFunctionExecution(action, subject):
   Output: Terminal output from performing action on subject.\
   Returns: None"
   cmdText = action.replace(SUB_KEY,subject)
-  if (re.search(WINDOWS_NT, OS_NAME)): #Handling for windows to be explained
+  if re.search(WINDOWS_NT, OS_NAME): # Handling for windows to be explained
     popenObj = os.popen(cmdText)
     handlePrint(popenObj.read())
   else:
@@ -263,7 +251,7 @@ def handleFunctionExecution(action, subject):
     # except OSError as e: # An externally induced kill to the process occured
     #  pass
 
-def filterStdin(regexCompile, action, verbosity, onlyMatches, colorOn=True, colorKey=RED):
+def filterStdin(regCompile, action, verbosity, onlyMatches, colorOn=True, colorKey=RED):
   "Enables data to come from the standard input instead.\
    Read lines from standard input until a blank line is encountered\
    Input:  Match parameters and action variables\
@@ -286,7 +274,7 @@ def filterStdin(regexCompile, action, verbosity, onlyMatches, colorOn=True, colo
     else:
       lineIn = lineIn.strip('\n')
       patternMatchedTrue =\
-        matchPatterns(regexCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey)
+        matchPatterns(regCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey)
 
       if patternMatchedTrue and action:
         handleFunctionExecution(action,subject=lineIn)
