@@ -18,13 +18,12 @@
 import os, re, sys
  
 from time import sleep
-from stat import S_ISDIR
 from subprocess import Popen 
 
-from parserCLI import cli_parser #Local module
-import pathFuncs
+import pathFuncs # Local module
+from parserCLI import cli_parser # Local module
 
-###############################START_OF_CONSTANTS###############################
+############################## START_OF_CONSTANTS ##############################
 YELLOW  = "YELLOW"
 GREEN   = "GREEN"
 RED     = "RED"
@@ -52,7 +51,7 @@ DEFAULT_SLEEP_TIMEOUT = 1
 intRegCompile = re.compile("^(\d+)$",re.UNICODE)
 intAble = lambda s : hasattr(s, '__divmod__') or intRegCompile.search(s)
 SUPPORTS_TERMINAL_COLORING = (re.match(POSIX_BASED_OS, OS_NAME)!= None)
-###############################END_OF_CONSTANTS################################
+############################## END_OF_CONSTANTS ################################
 
 #Writes a message to a stream and flushes the stream. Default stream is standard
 #error
@@ -71,11 +70,10 @@ def clearRegexRecur(inRegex):
     regex = re.sub('(^\*)|(^\.+[\.]+)|(\s*\*+)','.*', regex)
     
     regCompile = re.compile(regex)
-  except:
+  except Exception:
     return None
   else:
     return regCompile
-
 
 def handlePrint(queriedContent):
   "Handles printing of data with the assumption that data types 'str', 'int',\
@@ -88,10 +86,9 @@ def handlePrint(queriedContent):
    Returns: None"
   if (not queriedContent):  return
   
-
-  singleLinePrintable = (isinstance(queriedContent, str))or \
-                        (isinstance(queriedContent, int))or \
-                        (isinstance(queriedContent, tuple))
+  singleLinePrintable =\
+    isinstance(queriedContent, str) or hasattr(queriedContent, '__divmod__') or \
+    isinstance(queriedContent, tuple)
 
   if singleLinePrintable:
     try:
@@ -102,27 +99,25 @@ def handlePrint(queriedContent):
       )
       return
 
-  elif (isinstance(queriedContent , list)):
+  elif isinstance(queriedContent , list):
     for item in queriedContent:
       handlePrint(item)
 
-  elif (isinstance(queriedContent, dict)):
-    for key in queriedContent.keys():
-      handlePrint(queriedContent[key])
+  elif isinstance(queriedContent, dict):
+    for value in queriedContent.values():
+      handlePrint(value)
 
   else: #The queriedContent should have hooks: __str__() and __repr__() defined
     streamPrintFlush(queriedContent)
 
 #Sandwiches and highlights the text subject with the colorKey, in between white
 #color patterns
-colorPatterns = lambda colorKey, text : \
-          '{hlight}{color:2<}m{text}{hlight}{white:2<}m'.format(
-          hlight=HIGHLIGHT,color=POSIX_COLORS.get(colorKey,GREEN),
-          text=text,white=POSIX_COLORS[WHITE])
+colorPatterns =\
+    lambda colorKey, text: '{hlight}{color:2<}m{text}{hlight}{white:2<}m'.format(
+       hlight=HIGHLIGHT,color=POSIX_COLORS.get(colorKey,GREEN), text=text,white=POSIX_COLORS[WHITE]
+    )
 
-def matchPatterns(
-    regexCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey
-  ):
+def matchPatterns(regexCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey):
   regMatches = regexCompile.findall(text)
   PATTERNS_MATCHED=False
   if (regMatches):
@@ -152,66 +147,45 @@ def matchPatterns(
 
 def treeTraverse(thePath, recursionDepth=1, regexCompile=None,
      action=None,verbosity=True,onlyMatches=False,baseTime=None,colorOn=True,colorKey=RED):
-    "Traverse a given path. A negative recursion depth terminates the tree\
-     traversal dive.\
-     Input: Path, match parameters and action to be performed\
-     'baseTime' is an unsigned number(float/int) parameter for which matches\
-      will have to be newer.\
+    "Traverse a given path. A negative recursion depth terminates the tree traversal dive.\
+     Input: Path, match parameters and action to be performed 'baseTime' is an unsigned\
+     number(float/int) parameter for which matches  will have to be newer.\
      Output: Results from pattern matching and generic action application\
      Returns: None"
     #Catch invalid regexCompiles
-    if (not hasattr(regexCompile,'match')):
+
+    if not (hasattr(recursionDepth, '__divmod__') and recursionDepth >= 1):
+      return
+
+    elif not hasattr(regexCompile,'match'):
       streamPrintFlush("Invalid regexCompile: %s\n"%(regexCompile))
-      return
 
-    if (recursionDepth < 0):
-      return
-
-    if (not pathFuncs.existantPath(thePath)):
+    elif (not pathFuncs.existantPath(thePath)):
       streamPrintFlush("%s doesn't exist\n"%(thePath))
-      return
 
-    if (not pathFuncs.hasReadPerm(thePath)):
+    elif (not pathFuncs.hasReadPerm(thePath)):
       streamPrintFlush("No read access to path %s\n"%(thePath))
-      return
-
-    statDict = pathFuncs.getStatDict(thePath)
-    recursionDepth -= 1
-    #If the path is newer, it's creation time should be greater than baseTime
-    if (baseTime and (baseTime >= 0) and (statDict.st_ctime < baseTime)):
-      return
-
-    patternMatchedTrue = \
-      matchPatterns(
-        regexCompile,thePath, verbosity,onlyMatches, colorOn, colorKey
-      )
-                           
-    
-    if (patternMatchedTrue):
-      if (action):#Expecting a generic terminal based action eg cat, cp
-        handleFunctionExecution(action, subject=thePath)
-
-    
-    if (S_ISDIR(statDict.st_mode)):
-
-      for child in pathFuncs.dirListing(thePath):
-        fullChildPath = pathFuncs.afixPath(thePath, child)
-        treeTraverse(
-          fullChildPath,recursionDepth,regexCompile,
-          action,verbosity,onlyMatches,baseTime,colorOn, colorKey
+    else:
+      recursionDepth -= 1
+      #If the path is newer, it's creation time should be greater than baseTime
+      if baseTime and (baseTime >= 0) and os.path.getctime(thePath) < baseTime:
+        return
+      else:
+        patternMatchedTrue = matchPatterns(
+            regexCompile,thePath, verbosity,onlyMatches, colorOn, colorKey
         )
+    
+        if (patternMatchedTrue):
+          if (action): #Expecting a generic terminal based action eg cat, cp
+            handleFunctionExecution(action, subject=thePath)
 
-def resolveBaseTime(path):
-  #Input: A path -- directory/pipe or regular file
-  #Return the creation time for the path if it is valid, else return -1
-  if not pathFuncs.existantPath(path):
-    return -1
-  try:
-    statInfo = pathFuncs.getStatDict(path)
-  except:
-    return -1
-  else:
-    return statInfo.st_ctime
+        if os.path.isdir(thePath):
+          for child in pathFuncs.dirListing(thePath):
+            fullChildPath = pathFuncs.afixPath(thePath, child)
+            treeTraverse(
+              fullChildPath,recursionDepth,regexCompile,
+              action,verbosity,onlyMatches,baseTime,colorOn, colorKey
+            )
 
 def main():
     argc = len(sys.argv)
@@ -241,7 +215,6 @@ def main():
                            #Unicode character handling,case sensitivity etc
     if (ignoreCase):
        regexArgs |= re.IGNORECASE
-    
 
     #Case for when only the regex and path have been entered eg: 
     # ./pyFind.py books .
@@ -249,7 +222,7 @@ def main():
     #   targetPath = sys.argv[2]
     #   argc -= 1 #Reduction in-order to catch argument 2 in the argument vector
   
-    #Case for when only the regex has been entered eg: 
+    # Case for when only the regex has been entered eg: 
     # ./pyFind.py books
     # if (argc == 2):
     #   regex = sys.argv[1]
@@ -257,7 +230,10 @@ def main():
     regCompile = clearRegexRecur(regex)
 
     if (targetPath):
-       baseTime = resolveBaseTime(newerFile)
+       baseTime = -1
+       if newerFile and os.path.exists(newerFile):
+         baseTime = os.path.getctime(newerFile)
+
        treeTraverse(
          targetPath, maxDepth, regCompile, action,
          verbosity, onlyMatches, baseTime, colorOn
@@ -268,29 +244,26 @@ def main():
 
 def handleFunctionExecution(action, subject):
   "Performs a generic action on the subject eg a terminal based action eg cat, cp.\
-    Input: An action and a subject eg action=>'ls', subject=>'../'\
-    Output: Terminal output from performing action on subject.\
-    Returns: None"
+  Input: An action and a subject eg action=>'ls', subject=>'../'\
+  Output: Terminal output from performing action on subject.\
+  Returns: None"
   cmdText = action.replace(SUB_KEY,subject)
   if (re.search(WINDOWS_NT, OS_NAME)): #Handling for windows to be explained
     popenObj = os.popen(cmdText)
     handlePrint(popenObj.read())
-    return
+  else:
+    cmdList = list(filter(lambda item: item, cmdText.split(" "))) 
+    popenObj= Popen(cmdList,stdin=sys.stdin,stdout=sys.stdout,stderr=sys.stderr)
 
-  cmdList = list(filter(lambda item: item, cmdText.split(" "))) 
-  popenObj= Popen(cmdList,stdin=sys.stdin,stdout=sys.stdout,stderr=sys.stderr)
+    # Do something here if you want
+    # try:
+    #  while (popenObj.wait()):
+    #    sleep(DEFAULT_SLEEP_TIMEOUT)
+    #    popenObj.kill()
+    # except OSError as e: # An externally induced kill to the process occured
+    #  pass
 
-  #Do something here if you want
-  #try:
-  #  while (popenObj.wait()):
-  #    sleep(DEFAULT_SLEEP_TIMEOUT)
-  #    popenObj.kill()
-  #except OSError as e:#An externally induced kill to the process occured
-  #  pass
-
-def filterStdin(
-    regexCompile, action, verbosity, onlyMatches, colorOn=True, colorKey=RED
-  ):
+def filterStdin(regexCompile, action, verbosity, onlyMatches, colorOn=True, colorKey=RED):
   "Enables data to come from the standard input instead.\
    Read lines from standard input until a blank line is encountered\
    Input:  Match parameters and action variables\
@@ -301,10 +274,10 @@ def filterStdin(
   while stdinReading:
     try:
       lineIn = sys.stdin.readline()
-      if (lineIn == ""):#EOF equivalent here, time to end reading
+      if lineIn == "": # EOF equivalent here, time to end reading
         break
     except KeyboardInterrupt:
-      if False: #This clause will be taken out soon
+      if False: # This clause will be taken out soon
         handlePrint("Ctrl-C applied.\nExiting now...")
       stdinReading = False
     except Exception:
@@ -312,12 +285,15 @@ def filterStdin(
       stdinReading = False
     else:
       lineIn = lineIn.strip('\n')
-      patternMatchedTrue = matchPatterns(
-        regexCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey
-      )
+      patternMatchedTrue =\
+        matchPatterns(regexCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey)
 
-      if (patternMatchedTrue and action):
+      if patternMatchedTrue and action:
         handleFunctionExecution(action,subject=lineIn)
       
 if __name__ == '__main__':
-  main()
+  try:
+    main()
+  except:
+    if False: # This clause will soon be taken out
+      handlePrint('Unhandled exception')
