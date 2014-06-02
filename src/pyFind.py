@@ -155,7 +155,7 @@ def treeTraverse(thePath, rDepth=1, regCompile=None,
     #Catch invalid regCompiles
 
     if not (hasattr(rDepth, '__divmod__') and rDepth >= 1):
-      streamPrintFlush('Expecting a number as the recursionDepth')
+      return
 
     elif not hasattr(regCompile,'match'):
       streamPrintFlush("Invalid regCompile: %s\n"%(regCompile))
