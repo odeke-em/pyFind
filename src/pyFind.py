@@ -155,7 +155,7 @@ def treeTraverse(thePath, rDepth=1, regCompile=None,
     #Catch invalid regCompiles
 
     if not (hasattr(rDepth, '__divmod__') and rDepth >= 1):
-      return
+      streamPrintFlush('Expecting a number as the recursionDepth')
 
     elif not hasattr(regCompile,'match'):
       streamPrintFlush("Invalid regCompile: %s\n"%(regCompile))
@@ -165,6 +165,7 @@ def treeTraverse(thePath, rDepth=1, regCompile=None,
 
     elif (not pathFuncs.hasReadPerm(thePath)):
       streamPrintFlush("No read access to path %s\n"%(thePath))
+
     else:
       rDepth -= 1
       #If the path is newer, it's creation time should be greater than baseTime
@@ -176,7 +177,7 @@ def treeTraverse(thePath, rDepth=1, regCompile=None,
         )
     
         if (patternMatchedTrue):
-          if (action): #Expecting a generic terminal based action eg cat, cp
+          if (action): # Expecting a generic terminal based action eg cat, cp
             handleFunctionExecution(action, subject=thePath)
 
         if os.path.isdir(thePath):
