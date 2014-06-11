@@ -116,7 +116,9 @@ colorPatterns =\
        c=POSIX_COLORS.get(colorKey,GREEN), t=text
     )
 
-def matchPatterns(regCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey):
+def matchPatterns(
+    regCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey, linenoBool=False, lineno=0
+):
   regMatches = regCompile.findall(text)
   PATTERNS_MATCHED=False
   if regMatches:
@@ -140,7 +142,7 @@ def matchPatterns(regCompile, text, verbosity, onlyPatternsPrinted, colorOn, col
         for item in regMatches:
           text = text.replace(item, colorPatterns(colorKey, item))
 
-      handlePrint(text)
+      handlePrint('{l}: {t}'.format(l=lineno, t=text) if linenoBool else text)
 
   return PATTERNS_MATCHED
 
@@ -230,7 +232,7 @@ def main():
        )
     else:
        # Time for program to act as a filter
-       filterStdin(regCompile, action, verbosity, onlyMatches, colorOn)
+       filterStdin(regCompile, action, verbosity, onlyMatches, colorOn, linenoOn=options.lineno)
 
 def handleFunctionExecution(action, subject):
   "Performs a generic action on the subject eg a terminal based action eg cat, cp.\
@@ -253,7 +255,7 @@ def handleFunctionExecution(action, subject):
     #  pass
 
 def filterStdin(
-    regCompile, action, verbosity, onlyMatches, colorOn=True, colorKey=RED
+    regCompile, action, verbosity, onlyMatches, colorOn=True, colorKey=RED, linenoOn=False
 ):
   "Enables data to come from the standard input instead.\
    Read lines from standard input until a blank line is encountered\
@@ -262,6 +264,7 @@ def filterStdin(
    Returns: None"
 
   stdinReading = True
+  lineno = 0
   while stdinReading:
     try:
       lineIn = sys.stdin.readline()
@@ -276,9 +279,10 @@ def filterStdin(
       stdinReading = False
     else:
       lineIn = lineIn.strip('\n')
+      lineno += 1
       patternMatchedTrue =\
         matchPatterns(
-            regCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey
+            regCompile, lineIn, verbosity, onlyMatches, colorOn, colorKey, linenoOn, lineno
         )
 
       if patternMatchedTrue and action:

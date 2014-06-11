@@ -13,9 +13,31 @@ and experienced programmer, in the field of file and pattern manipulation.
 regular expressions. For the advanced, the concept of piping is useful.
 
 
-
 Example usage:
 =================
+
+  For options do: ./pyFind.py -h or ./pyFind.py --help
+    Usage: pyFind.py [options]
+
+    Options:
+        -h, --help            show this help message and exit
+        -a ACTION, --action=ACTION
+                              Action to be executed Usage: <cmd> {} <....>\;
+        -c, --colorOn         Turn off match coloring
+        -i, --ignoreCase      Turn-off case sensitive matches
+        -m MAXDEPTH, --maxDepth=MAXDEPTH
+                              Set maximum recursion depth
+        -n NEWERFILE, --newer=NEWERFILE
+                              Any paths newer than this path will be matched
+        -o, --onlyMatches     Set whether to only print the grouped/matched regex
+                              patterns
+        -p TARGETPATH, --path=TARGETPATH
+                              Option for choosing the directory to search from
+        -r REGEX, --regex=REGEX
+                              The regular expression expected
+        -l, --lineno          Toggle printing of line number occurances
+        -v, --verbose         Set whether to display output.
+
 
   To find all files with a python extension in the current directory
 
@@ -64,3 +86,14 @@ Example usage:
     ls | ./pyFind.py  foo <==> ls | grep foo
 
     ./pyFind.py foo . <==> grep foo . <==> ./pyFind.py -r foo -p .
+
+   Find a sequence and line number for text read from stdin:
+    eg after a cat of pyFind.py
+        cat pyFind.py | pyFind.py -r 'search' -l
+        9:     Pass a regular expression/pattern for a file to search for.
+        10:  pyFind recursively searches through a tree; the maxDepth option
+        11:  controls how deep pyFind searches.
+        15:      ls | ./pyFind.py -r "*.c$" ##To search for all files with a .c extension
+        51: intAble = lambda s: hasattr(s, '__divmod__') or intRegCompile.search(s)
+        62: # Matcher to keep a greedy search going on and consuming endless memory
+        243:   if re.search(WINDOWS_NT, OS_NAME): # Handling for windows to be explained

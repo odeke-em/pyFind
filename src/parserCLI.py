@@ -25,7 +25,7 @@ def cli_parser():
   parser.add_option('-n','--newer',dest='newerFile',
   default=None,help="Any paths newer than this path will be matched")
 
-  parser.add_option('-o', '--onlyMatches',dest='onlyMatches',default=False,
+  parser.add_option('-o', '--onlyMatches', dest='onlyMatches',default=False,
   help="Set whether to only print the grouped/matched regex patterns",
   action='store_true')
 
@@ -35,8 +35,11 @@ def cli_parser():
   parser.add_option('-r','--regex',dest='regex',
   default=".*",help="The regular expression expected")
 
+  parser.add_option('-l', '--lineno', dest='lineno',
+  default=False, help="Toggle printing of line number occurances", action='store_true')
+
   parser.add_option('-v','--verbose',dest='verbosity',default=True,
-  help="Set whether to display output." ,action='store_false')
+  help="Set whether to display output.", action='store_false')
 
   options,args = parser.parse_args()
 
