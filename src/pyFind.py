@@ -2,7 +2,7 @@
 '''
 *******************************************************************************
  Author: Emmanuel Odeke <odeke@ualberta.ca>
- pyFind v1.1 
+ pyFind v1.2 
 
  For help: ./pyFind.py -h 
 
@@ -110,11 +110,9 @@ def handlePrint(queriedContent):
 
 # Sandwiches and highlights the text subject with the colorKey,
 # in between white color patterns
-colorPatterns =\
-    lambda colorKey, text: '{h}{c:2<}m{t}{h}{w:2<}m'.format(
-       h=HIGHLIGHT, w=POSIX_COLORS[WHITE],
-       c=POSIX_COLORS.get(colorKey,GREEN), t=text
-    )
+colorPatterns = lambda colorKey, text: '{h}{c:2<}m{t}{h}{w:2<}m'.format(
+    h=HIGHLIGHT, w=POSIX_COLORS[WHITE], c=POSIX_COLORS.get(colorKey,GREEN), t=text
+)
 
 def matchPatterns(
     regCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey, linenoBool=False, lineno=0
@@ -135,7 +133,7 @@ def matchPatterns(
 
       return PATTERNS_MATCHED 
 
-    if verbosity:
+    else:
       if colorOn and SUPPORTS_TERMINAL_COLORING:
         # Take out non empty sequences
         regMatches = set(filter(lambda value: value, regMatches))
@@ -164,10 +162,10 @@ def treeTraverse(
       streamPrintFlush("Invalid regCompile: %s\n"%(regCompile))
 
     elif not pathFuncs.existantPath(thePath):
-      streamPrintFlush("%s doesn't exist\n"%(thePath))
+      verbosity and streamPrintFlush("%s doesn't exist\n"%(thePath))
 
     elif not pathFuncs.hasReadPerm(thePath):
-      streamPrintFlush("No read access to path %s\n"%(thePath))
+      verbosity and streamPrintFlush("No read access to path %s\n"%(thePath))
 
     else:
       #If the path is newer, it's creation time should be greater than baseTime
@@ -286,7 +284,7 @@ def filterStdin(
         )
 
       if patternMatchedTrue and action:
-        handleFunctionExecution(action,subject=lineIn)
+        handleFunctionExecution(action, subject=lineIn)
       
 if __name__ == '__main__':
   try:
