@@ -1,5 +1,5 @@
 
-pyFind v0.0.1
+pyFind v0.0.2
 ==============
 
  pyFind is meant to be a hybrid between UNIX utilities 'grep' and 'find'.
@@ -87,13 +87,23 @@ Example usage:
 
     ./pyFind.py foo . <==> grep foo . <==> ./pyFind.py -r foo -p .
 
+
    Find a sequence and line number for text read from stdin:
+
     eg after a cat of pyFind.py
+
         cat pyFind.py | pyFind.py -r 'search' -l
+
         9:     Pass a regular expression/pattern for a file to search for.
+
         10:  pyFind recursively searches through a tree; the maxDepth option
+
         11:  controls how deep pyFind searches.
+
         15:      ls | ./pyFind.py -r "*.c$" ##To search for all files with a .c extension
+
         51: intAble = lambda s: hasattr(s, '__divmod__') or intRegCompile.search(s)
+
         62: # Matcher to keep a greedy search going on and consuming endless memory
+
         243:   if re.search(WINDOWS_NT, OS_NAME): # Handling for windows to be explained
