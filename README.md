@@ -1,5 +1,5 @@
 
-pyFind v0.0.2
+pyFind
 ==============
 
  pyFind is meant to be a hybrid between UNIX utilities 'grep' and 'find'.
@@ -107,3 +107,5 @@ Example usage:
         62: # Matcher to keep a greedy search going on and consuming endless memory
 
         243:   if re.search(WINDOWS_NT, OS_NAME): # Handling for windows to be explained
+
+[ ![Codeship Status for odeke-em/pyFind](https://www.codeship.io/projects/c6e59ed0-fd82-0131-5044-1ea35c716b39/status)](https://www.codeship.io/projects/29440)
