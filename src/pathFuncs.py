@@ -23,7 +23,17 @@ def getStatDict(path):
     return os.stat(path)
 
 def dirListing(targetPath):
-  return os.listdir(targetPath)
+  iterator = os.listdir(targetPath)
+  for child in iterator:
+    yield afixPath(targetPath, child)
+
+def pickRegularItemsFromWalk(walkGenerator):
+  for root, dirs, regs in walkGenerator:
+    if root is '.' or root is './':
+      root = ''
+       
+    for reg in regs:
+      yield os.path.join(root, reg)
 
 def crawlAndMap(targetPath, functor):
   #Given a path and a generic function to apply to each
