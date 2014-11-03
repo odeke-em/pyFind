@@ -146,7 +146,8 @@ def matchPatterns(
 
 def treeTraverse(
     thePath, rDepth=1, regCompile=None, action=None, verbosity=True,
-    onlyMatches=False, baseTime=None, colorOn=True, colorKey=RED
+    onlyMatches=False, baseTime=None, colorOn=True, colorKey=RED,
+    allTypesBool=False
 ):
     "Traverse a given path. A negative recursion depth terminates the tree traversal dive.\
      Input: Path, match parameters and action to be performed 'baseTime' is an unsigned\
@@ -182,11 +183,15 @@ def treeTraverse(
             handleFunctionExecution(action, subject=thePath)
 
         if os.path.isdir(thePath):
-          for child in pathFuncs.dirListing(thePath):
-            fullChildPath = pathFuncs.afixPath(thePath, child)
+          if not allTypesBool: # Only non-dirs wanted
+            iterator = pathFuncs.pickRegularItemsFromWalk(os.walk(thePath))
+          else:
+            iterator = pathFuncs.dirListing(thePath)
+
+          for fullChildPath in iterator:
             treeTraverse(
-              fullChildPath,rDepth,regCompile,
-              action,verbosity,onlyMatches,baseTime,colorOn, colorKey
+              fullChildPath, rDepth, regCompile, action, verbosity, onlyMatches,
+              baseTime, colorOn, colorKey, allTypesBool=allTypesBool
             )
 
 def main():
@@ -197,6 +202,8 @@ def main():
     parser       = cli_parser()
     options,args = parser
 
+    colorOn	 =  options.colorOn
+    allTypesBool =   not options.files
     targetPath   = options.targetPath
     regex        = options.regex
     verbosity    = options.verbosity
@@ -205,7 +212,6 @@ def main():
     onlyMatches  = options.onlyMatches
     ignoreCase   = options.ignoreCase
     newerFile    = options.newerFile
-    colorOn	 = options.colorOn
 
     if not intAble(maxDepth):
       streamPrintFlush("MaxDepth should be an integer >= 0.\nExiting...\n")
@@ -226,7 +232,7 @@ def main():
 
        treeTraverse(
          targetPath, maxDepth, regCompile, action,
-         verbosity, onlyMatches, baseTime, colorOn
+         verbosity, onlyMatches, baseTime, colorOn, allTypesBool=allTypesBool
        )
     else:
        # Time for program to act as a filter

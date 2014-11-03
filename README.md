@@ -37,6 +37,7 @@ Example usage:
                               The regular expression expected
         -l, --lineno          Toggle printing of line number occurances
         -v, --verbose         Set whether to display output.
+        -f, --files           Toggle retrieval of only files
 
 
   To find all files with a python extension in the current directory
@@ -107,3 +108,19 @@ Example usage:
         62: # Matcher to keep a greedy search going on and consuming endless memory
 
         243:   if re.search(WINDOWS_NT, OS_NAME): # Handling for windows to be explained
+
+
+
+   To find only files: `pyFind.py -p src/ -m 2 -f`
+        OR
+    `pyFind.py -p src/ -m 2 --files`
+        ../src
+        ../src/.parserCLI.py.swp
+        ../src/colorTest.py
+        ../src/parserCLI.py
+        ../src/parserCLI.pyc
+        ../src/pathFuncs.py
+        ../src/pathFuncs.pyc
+        ../src/pyFind.py
+        ../src/__pycache__/parserCLI.cpython-34.pyc
+        ../src/__pycache__/pathFuncs.cpython-34.pyc

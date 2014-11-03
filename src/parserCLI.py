@@ -41,6 +41,9 @@ def cli_parser():
   parser.add_option('-v','--verbose',dest='verbosity',default=True,
   help="Set whether to display output.", action='store_false')
 
+  parser.add_option('-f', '--files', dest='files', default=False,
+  help="Toggle retrieval of only files", action='store_true')
+
   options,args = parser.parse_args()
 
   return options,args
