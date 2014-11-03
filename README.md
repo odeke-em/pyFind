@@ -112,15 +112,27 @@ Example usage:
 
 
    To find only files: `pyFind.py -p src/ -m 2 -f`
+
         OR
+
     `pyFind.py -p src/ -m 2 --files`
+
         ../src
+
         ../src/.parserCLI.py.swp
+
         ../src/colorTest.py
+
         ../src/parserCLI.py
+
         ../src/parserCLI.pyc
+
         ../src/pathFuncs.py
+
         ../src/pathFuncs.pyc
+
         ../src/pyFind.py
+
         ../src/__pycache__/parserCLI.cpython-34.pyc
+
         ../src/__pycache__/pathFuncs.cpython-34.pyc
