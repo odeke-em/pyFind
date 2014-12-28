@@ -36,20 +36,18 @@ def pickRegularItemsFromWalk(walkGenerator):
       yield os.path.join(root, reg)
 
 def crawlAndMap(targetPath, functor):
-  #Given a path and a generic function to apply to each
-  #Return a generator whose content is the result of mapping each
-  #path within nodes of the targetPath
+  # Given a path and a generic function to apply to each
+  # Return a generator whose content is the result of mapping each
+  # path within nodes of the targetPath
   curDirGenerator = getDirContent(targetPath)
 
   try:
     for root, dirs, regFiles in curDirGenerator:
       afixedPaths = map(lambda path: afixPath(root, path), regFiles)
       functorMapping = map(lambda path: functor(path), afixedPaths)
-
       yield functorMapping
-
-  except StopIteration: pass
-  else: pass
+  except StopIteration:
+    pass
 
 def main():
   #Sample run

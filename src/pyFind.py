@@ -2,7 +2,6 @@
 '''
 *******************************************************************************
  Author: Emmanuel Odeke <odeke@ualberta.ca>
- pyFind v1.2 
 
  For help: ./pyFind.py -h 
 
@@ -48,8 +47,15 @@ OS_NAME   = os.name
 DEFAULT_SLEEP_TIMEOUT = 1
 
 intRegCompile = re.compile("^(\d+)$", re.UNICODE)
-intAble = lambda s: hasattr(s, '__divmod__') or intRegCompile.search(s)
+intAble = lambda s: isCallable(s, '__divmod__') or intRegCompile.search(s)
 SUPPORTS_TERMINAL_COLORING = re.match(POSIX_BASED_OS, OS_NAME) != None
+
+def isCallable(obj, attrKey):
+  attr = getattr(obj, attrKey, None) 
+  if attr is None:
+    return False
+
+  return hasattr(attr, '__call__')
 
 ############################## END_OF_CONSTANTS ################################
 # Writes a message to a stream and flushes the stream.
@@ -86,18 +92,18 @@ def handlePrint(queriedContent):
   if not queriedContent:
     return
   
-  singleLinePrintable =\
-    isinstance(queriedContent, str) or hasattr(queriedContent, '__divmod__') \
-    or isinstance(queriedContent, tuple)
+  singleLinePrintable = isinstance(queriedContent, str)\
+                    or isCallable(queriedContent, '__divmod__') \
+                    or isinstance(queriedContent, tuple)
 
   if singleLinePrintable:
     try:
       streamPrintFlush("%s\n"%(queriedContent), stream=sys.stdout)
     except UnicodeEncodeError:
       streamPrintFlush("UnicodeEncodeError encode while printing\n")
-      return
+    return
 
-  elif isinstance(queriedContent , list):
+  if isinstance(queriedContent , list):
     for item in queriedContent:
       handlePrint(item)
 
@@ -105,18 +111,21 @@ def handlePrint(queriedContent):
     for value in queriedContent.values():
       handlePrint(value)
 
-  else: # The queriedContent should have hooks: __str__ and __repr__ defined
+  else:
+    # The queriedContent should have hooks: __str__ and __repr__ defined
     streamPrintFlush(queriedContent)
 
-# Sandwiches and highlights the text subject with the colorKey,
-# in between white color patterns
-colorPatterns = lambda colorKey, text: '{h}{c:2<}m{t}{h}{w:2<}m'.format(
-    h=HIGHLIGHT, w=POSIX_COLORS[WHITE], c=POSIX_COLORS.get(colorKey,GREEN), t=text
-)
+# Sandwiches and highlights the text subject with
+# the colorKey, in between white color patterns
+def colorPatterns(colorKey, text):
+  return '{h}{c:2<}m{t}{h}{w:2<}m'.format(
+     h=HIGHLIGHT, w=POSIX_COLORS[WHITE],
+     c=POSIX_COLORS.get(colorKey,GREEN), t=text
+  )
 
-def matchPatterns(
-    regCompile, text, verbosity, onlyPatternsPrinted, colorOn, colorKey, linenoBool=False, lineno=0
-):
+def matchPatterns(regCompile, text, verbosity, onlyPatternsPrinted,
+                            colorOn, colorKey, linenoBool=False, lineno=0):
+
   regMatches = regCompile.findall(text)
   PATTERNS_MATCHED=False
   if regMatches:
@@ -128,7 +137,8 @@ def matchPatterns(
       if (colorOn and SUPPORTS_TERMINAL_COLORING):
          handlePrint(colorPatterns(colorKey,joinedPatterns))
 
-      else: # At this point just print the matched patterns
+      else:
+         # At this point just print the matched patterns
          handlePrint(joinedPatterns)
 
       return PATTERNS_MATCHED 
@@ -144,22 +154,23 @@ def matchPatterns(
 
   return PATTERNS_MATCHED
 
-def treeTraverse(
-    thePath, rDepth=1, regCompile=None, action=None, verbosity=True,
-    onlyMatches=False, baseTime=None, colorOn=True, colorKey=RED,
-    allTypesBool=False
-):
-    "Traverse a given path. A negative recursion depth terminates the tree traversal dive.\
-     Input: Path, match parameters and action to be performed 'baseTime' is an unsigned\
-     number(float/int) parameter for which matches  will have to be newer.\
-     Output: Results from pattern matching and generic action application\
-     Returns: None"
+def treeTraverse(thePath, rDepth=1, regCompile=None, action=None,
+                    verbosity=True, onlyMatches=False, baseTime=None,
+                    colorOn=True, colorKey=RED, noDirsWanted=False):
+    "Traverse a given path. A negative recursion depth terminates the"\
+    "tree traversal dive.\n"\
+    "Input: Path, match parameters and action to be performed 'baseTime' "\
+    "is an unsigned number(float/int) parameter for which matches  will have "\
+    "to be newer.\n"\
+    "Output: Results from pattern matching and generic action application.\n"\
+    "Returns: None"
 
-    if not (hasattr(rDepth, '__divmod__') and rDepth >= 0):
+    canTraverse = isCallable(rDepth, '__divmod__') and rDepth >= 0
+    if not canTraverse:
       return
 
     # Catch invalid regCompiles
-    elif not hasattr(regCompile,'match'):
+    if not isCallable(regCompile, 'match'):
       streamPrintFlush("Invalid regCompile: %s\n"%(regCompile))
 
     elif not pathFuncs.existantPath(thePath):
@@ -169,49 +180,51 @@ def treeTraverse(
       verbosity and streamPrintFlush("No read access to path %s\n"%(thePath))
 
     else:
-      #If the path is newer, it's creation time should be greater than baseTime
-      if baseTime and (baseTime >= 0) and os.path.getctime(thePath) < baseTime:
+      # Check if path is newer than base time.
+      if not isCallable(baseTime, '__divmod__'):
+        baseTime = 0
+      elif os.path.getctime(thePath) < baseTime:
         return
-      else:
-        rDepth -= 1
-        patternMatchedTrue = matchPatterns(
-            regCompile,thePath, verbosity,onlyMatches, colorOn, colorKey
-        )
+
+      rDepth -= 1
+      patternMatchedTrue = matchPatterns(
+        regCompile,thePath, verbosity,onlyMatches, colorOn, colorKey
+      )
     
-        if patternMatchedTrue:
-          if action: # Expecting a generic terminal based action eg cat, cp
-            handleFunctionExecution(action, subject=thePath)
+      if patternMatchedTrue:
+        if action: # Expecting a generic terminal based action eg cat, cp
+           handleFunctionExecution(action, subject=thePath)
 
-        if os.path.isdir(thePath):
-          if not allTypesBool: # Only non-dirs wanted
-            iterator = pathFuncs.pickRegularItemsFromWalk(os.walk(thePath))
-          else:
-            iterator = pathFuncs.dirListing(thePath)
+      if os.path.isdir(thePath):
+        if not noDirsWanted: # Only non-dirs wanted
+          iterator = pathFuncs.pickRegularItemsFromWalk(os.walk(thePath))
+        else:
+          iterator = pathFuncs.dirListing(thePath)
 
-          for fullChildPath in iterator:
-            treeTraverse(
-              fullChildPath, rDepth, regCompile, action, verbosity, onlyMatches,
-              baseTime, colorOn, colorKey, allTypesBool=allTypesBool
-            )
+        for fullChildPath in iterator:
+          treeTraverse(
+            fullChildPath, rDepth, regCompile, action, verbosity,
+            onlyMatches, baseTime, colorOn, colorKey, noDirsWanted=noDirsWanted
+          )
 
 def main():
     argc = len(sys.argv)
     if argc <= 1:
        sys.argv.append('-h')
 
-    parser       = cli_parser()
-    options,args = parser
+    parser = cli_parser()
+    options, args = parser
 
-    colorOn	 =  options.colorOn
-    allTypesBool =   not options.files
-    targetPath   = options.targetPath
-    regex        = options.regex
-    verbosity    = options.verbosity
     action       = options.action
-    maxDepth     = options.maxDepth
-    onlyMatches  = options.onlyMatches
+    colorOn      =  options.colorOn
     ignoreCase   = options.ignoreCase
+    maxDepth     = options.maxDepth
     newerFile    = options.newerFile
+    noDirsWanted = not options.files
+    onlyMatches  = options.onlyMatches
+    regex        = options.regex
+    targetPath   = options.targetPath
+    verbosity    = options.verbosity
 
     if not intAble(maxDepth):
       streamPrintFlush("MaxDepth should be an integer >= 0.\nExiting...\n")
@@ -232,7 +245,7 @@ def main():
 
        treeTraverse(
          targetPath, maxDepth, regCompile, action,
-         verbosity, onlyMatches, baseTime, colorOn, allTypesBool=allTypesBool
+         verbosity, onlyMatches, baseTime, colorOn, noDirsWanted=noDirsWanted
        )
     else:
        # Time for program to act as a filter
